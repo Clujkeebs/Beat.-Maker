@@ -70,6 +70,16 @@
   #start p{color:var(--muted);max-width:520px;line-height:1.5}
   .meter{height:6px;background:var(--line);border-radius:3px;overflow:hidden;width:120px}
   .meter i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--acc3),var(--warn),var(--acc))}
+  .ribbon{margin-top:8px;height:34px;border-radius:8px;background:repeating-linear-gradient(90deg,#20202c 0 12.5%,#262634 12.5% 25%);border:1px solid var(--line);cursor:ew-resize;position:relative;touch-action:none}
+  .ribbon::after{content:'STRUM';position:absolute;right:8px;top:9px;font-size:10px;letter-spacing:2px;color:var(--muted)}
+  .ribbon.hit{box-shadow:inset 0 0 0 2px var(--acc2)}
+  .sounds button{min-width:80px}
+  .tappads{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+  .tap{height:78px;border-radius:12px;background:linear-gradient(180deg,#2a2a3c,#1e1e2a);border:1px solid var(--line);display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:700;font-size:14px;cursor:pointer;touch-action:none;position:relative}
+  .tap small{font-size:10px;color:var(--muted);font-weight:400;margin-top:3px}
+  .tap .key{position:absolute;top:5px;left:8px;font-size:10px;color:var(--muted)}
+  .tap.hit{background:linear-gradient(180deg,var(--acc3),#8fc22a);color:#101a05;transform:scale(.97)}
+  .tap.hit small,.tap.hit .key{color:#20320a}
   footer{color:var(--muted);font-size:11px;text-align:center;padding:10px}
 </style>
 </head>
@@ -79,7 +89,7 @@
   <h1>BEAT <span style="color:var(--acc)">MAKER</span></h1>
   <p>A digital Hichord: 7-button chord pad with modifiers, arpeggiator and a real synth engine, plus a 16-step drum machine. Everything runs in your browser, free, no account.</p>
   <button class="big on" id="startBtn">Tap to power on</button>
-  <p class="hint">Keys 1–7 = chords · Q W E R T Y U I = drums · Space = play/stop · Shift = 7th · Alt = sus · Ctrl = maj/min swap</p>
+  <p class="hint">Keys 1–7 = chords · Q W E R A S D F = tap pads · Space = play/stop · Shift = 7th · Alt = sus · Ctrl = maj/min swap</p>
 </div>
 
 <header>
@@ -98,17 +108,17 @@
 
 <div class="panel">
   <div class="row" style="margin-bottom:10px">
-    <h2 style="margin:0" class="grow">Chord pad</h2>
-    <label class="ctl"><span>Key</span><select id="key"></select></label>
-    <label class="ctl"><span>Scale</span><select id="scale">
-      <option value="major">Major</option><option value="minor">Natural minor</option><option value="dorian">Dorian</option><option value="mixo">Mixolydian</option><option value="lydian">Lydian</option><option value="phrygian">Phrygian</option><option value="hminor">Harmonic minor</option>
+    <h2 style="margin:0" class="grow">Hichord</h2>
+    <label class="ctl" style="min-width:auto"><span>Key</span><select id="key"></select></label>
+    <label class="ctl" style="min-width:auto"><span>Scale</span><select id="scale">
+      <option value="major">Major</option><option value="minor">Minor</option><option value="dorian">Dorian</option><option value="mixo">Mixolydian</option><option value="lydian">Lydian</option><option value="phrygian">Phrygian</option><option value="hminor">Harmonic minor</option>
     </select></label>
-    <label class="ctl"><span>Octave</span><select id="oct"><option>2</option><option selected>3</option><option>4</option></select></label>
-    <label class="ctl"><span>Voicing</span><select id="voicing"><option value="0">Root</option><option value="1">1st inv</option><option value="2">2nd inv</option><option value="spread">Spread</option></select></label>
+    <label class="ctl" style="min-width:auto"><span>Octave</span><div class="row" style="gap:4px"><button id="octDn">−</button><b id="octV" style="min-width:16px;text-align:center">3</b><button id="octUp">+</button></div></label>
+    <label class="ctl" style="min-width:auto"><span>Voicing</span><button id="voicingBtn">Root</button></label>
   </div>
   <div class="chordpad" id="chordpad"></div>
+  <div class="ribbon" id="ribbon" title="Drag across to strum the current chord"></div>
   <div class="row mods" style="margin-top:10px">
-    <span class="hint">Modifiers:</span>
     <button data-mod="7">7th</button>
     <button data-mod="9">add9</button>
     <button data-mod="sus">sus</button>
@@ -116,7 +126,7 @@
     <button data-mod="dim">dim</button>
     <button data-mod="bass">+bass</button>
     <span class="grow"></span>
-    <button id="latch">Latch</button>
+    <button id="latch">Hold</button>
     <button id="arpOn">Arp</button>
     <select id="arpMode"><option value="up">Up</option><option value="down">Down</option><option value="updown">Up/Down</option><option value="random">Random</option><option value="strum">Strum</option></select>
     <select id="arpRate"><option value="4">1/4</option><option value="8" selected>1/8</option><option value="12">1/8T</option><option value="16">1/16</option><option value="32">1/32</option></select>
@@ -126,40 +136,34 @@
 
 <div class="two">
   <div class="panel">
-    <h2>Synth engine</h2>
-    <div class="row" style="margin-bottom:10px">
-      <select id="wave"><option value="saw">Saw</option><option value="square">Square</option><option value="tri">Triangle</option><option value="pluck">Pluck</option><option value="pad" selected>Pad</option><option value="organ">Organ</option><option value="bell">Bell</option></select>
-      <label class="ctl grow"><span>Detune <b id="detuneV">12c</b></span><input type="range" id="detune" min="0" max="40" value="12"></label>
-    </div>
+    <h2>Sound</h2>
+    <div class="row sounds" id="sounds" style="margin-bottom:12px"></div>
     <div class="knobs">
-      <label class="ctl"><span>Attack <b id="attV">0.05s</b></span><input type="range" id="att" min="0" max="100" value="5"></label>
-      <label class="ctl"><span>Decay <b id="decV">0.40s</b></span><input type="range" id="dec" min="1" max="100" value="40"></label>
-      <label class="ctl"><span>Sustain <b id="susV">60%</b></span><input type="range" id="sus" min="0" max="100" value="60"></label>
-      <label class="ctl"><span>Release <b id="relV">0.60s</b></span><input type="range" id="rel" min="1" max="100" value="30"></label>
-      <label class="ctl"><span>Cutoff <b id="cutV">3.5k</b></span><input type="range" id="cut" min="0" max="100" value="60"></label>
-      <label class="ctl"><span>Resonance <b id="resV">2</b></span><input type="range" id="res" min="0" max="100" value="15"></label>
-      <label class="ctl"><span>Filter env <b id="fenvV">40%</b></span><input type="range" id="fenv" min="0" max="100" value="40"></label>
-      <label class="ctl"><span>Synth vol <b id="svolV">70%</b></span><input type="range" id="svol" min="0" max="100" value="70"></label>
+      <label class="ctl"><span>Tone <b id="toneV">60%</b></span><input type="range" id="tone" min="0" max="100" value="60"></label>
+      <label class="ctl"><span>Space <b id="spaceV">35%</b></span><input type="range" id="space" min="0" max="100" value="35"></label>
+      <label class="ctl"><span>Length <b id="lenV">40%</b></span><input type="range" id="len" min="0" max="100" value="40"></label>
+      <label class="ctl"><span>Volume <b id="svolV">70%</b></span><input type="range" id="svol" min="0" max="100" value="70"></label>
     </div>
-  </div>
-  <div class="panel">
-    <h2>Effects</h2>
-    <div class="knobs">
-      <label class="ctl"><span>Reverb <b id="revV">30%</b></span><input type="range" id="rev" min="0" max="100" value="30"></label>
-      <label class="ctl"><span>Delay <b id="dlyV">20%</b></span><input type="range" id="dly" min="0" max="100" value="20"></label>
-      <label class="ctl"><span>Delay time <b id="dlyTV">3/16</b></span><select id="dlyT"><option value="0.5">1/8</option><option value="0.75" selected>3/16</option><option value="1">1/4</option><option value="1.5">Dotted 1/4</option></select></label>
-      <label class="ctl"><span>Feedback <b id="fbV">35%</b></span><input type="range" id="fb" min="0" max="90" value="35"></label>
-      <label class="ctl"><span>Chorus <b id="choV">25%</b></span><input type="range" id="cho" min="0" max="100" value="25"></label>
-      <label class="ctl"><span>Drive <b id="drvV">10%</b></span><input type="range" id="drv" min="0" max="100" value="10"></label>
-      <label class="ctl"><span>Compressor <b id="compV">On</b></span><select id="comp"><option value="1" selected>On</option><option value="0">Off</option></select></label>
-    </div>
-    <h2 style="margin-top:14px">Chord sequencer <span class="hint" style="text-transform:none;letter-spacing:0">(click a step, then a chord; right-click clears)</span></h2>
+    <h2 style="margin-top:16px">Chord sequencer <span class="hint" style="text-transform:none;letter-spacing:0">(click a step, then a chord; right-click clears)</span></h2>
     <div class="seq16" id="cseq"></div>
     <div class="row" style="margin-top:8px">
       <button id="cseqOn">Chord seq on</button>
       <button id="cseqRec">Live record</button>
       <button id="cseqClear">Clear</button>
-      <span class="hint">Each step = 1 beat (16 steps = 4 bars).</span>
+      <span class="hint">1 step = 1 beat · 4 bars</span>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="row" style="margin-bottom:10px">
+      <h2 style="margin:0" class="grow">Tap pads</h2>
+      <div class="row" id="instruments" style="gap:4px">
+        <button data-inst="drums" class="on">Drums</button><button data-inst="perc">Percussion</button><button data-inst="bass">Bass</button><button data-inst="melody">Melody</button>
+      </div>
+    </div>
+    <div class="tappads" id="tappads"></div>
+    <div class="row" style="margin-top:10px">
+      <button id="tapRec">● Record taps to grid</button>
+      <span class="hint">Tap or use keys Q W E R / A S D F. Drum taps go into the drum grid while playing.</span>
     </div>
   </div>
 </div>
@@ -232,7 +236,7 @@ function initAudio(){
   synthBus.connect(revSend); synthBus.connect(dlySend);
   comp.connect(master); master.connect(analyser); analyser.connect(ctx.destination);
   recDest = ctx.createMediaStreamDestination(); master.connect(recDest);
-  updateDelayTime();
+  updateDelayTime(); applySound();
 }
 
 /* ============ STATE ============ */
@@ -242,7 +246,7 @@ const S = {
   mods:{7:false,9:false,sus:false,swap:false,dim:false,bass:false},
   latch:false, arp:false, arpMode:'up', arpRate:8, arpOcts:2,
   wave:'pad', detune:12, att:.05, dec:.4, sus:.6, rel:.6, cut:.6, res:2, fenv:.4,
-  kit:'808',
+  kit:'808', sound:'pad', tone:.6, space:.35, len:.4, inst:'drums', tapRec:false,
   drums: Array.from({length:8},()=>new Array(16).fill(0)),
   drumVol: [1,.9,.8,.6,.6,.8,.7,.6],
   cseq: new Array(16).fill(null), cseqOn:false, cseqRec:false,
@@ -254,6 +258,7 @@ const SCALES={
   mixo:[0,2,4,5,7,9,10], lydian:[0,2,4,6,7,9,11], phrygian:[0,1,3,5,7,8,10], hminor:[0,2,3,5,7,8,11]
 };
 const ROMAN=['I','II','III','IV','V','VI','VII'];
+const VOICINGS={'0':'Root','1':'1st inv','2':'2nd inv','spread':'Spread'};
 const mtof = m=>440*Math.pow(2,(m-69)/12);
 
 function chordFor(d, mods=S.mods){
@@ -274,6 +279,27 @@ function chordFor(d, mods=S.mods){
   if(mods.bass) notes.unshift(r-12);
   const label=NOTE_NAMES[r%12]+q+(mods[7]?'7':'')+(mods[9]?'add9':'');
   return {notes,label};
+}
+
+/* ============ SOUND PRESETS (Hichord-style) ============ */
+const SOUNDS={
+  piano:{label:'Piano',wave:'pluck',detune:4,att:.003,dec:.9,sus:0,rel:.5,cut:.75,res:1,fenv:.5,rev:.3,dly:.05,cho:.05},
+  pad:{label:'Pad',wave:'pad',detune:12,att:.35,dec:.6,sus:.8,rel:1.2,cut:.55,res:1.5,fenv:.2,rev:.5,dly:.25,cho:.35},
+  pluck:{label:'Pluck',wave:'pluck',detune:8,att:.002,dec:.35,sus:0,rel:.25,cut:.65,res:3,fenv:.7,rev:.25,dly:.3,cho:.1},
+  organ:{label:'Organ',wave:'organ',detune:6,att:.01,dec:.2,sus:1,rel:.15,cut:.9,res:.5,fenv:0,rev:.2,dly:.05,cho:.3},
+  bell:{label:'Bell',wave:'bell',detune:6,att:.002,dec:1.2,sus:0,rel:1.0,cut:.85,res:1,fenv:.3,rev:.55,dly:.3,cho:.1},
+  strings:{label:'Strings',wave:'saw',detune:18,att:.5,dec:.8,sus:.9,rel:1.4,cut:.5,res:1,fenv:.15,rev:.6,dly:.15,cho:.5},
+  lead:{label:'Lead',wave:'square',detune:10,att:.01,dec:.3,sus:.7,rel:.2,cut:.7,res:4,fenv:.5,rev:.2,dly:.35,cho:.15},
+  lofi:{label:'Lo-fi keys',wave:'tri',detune:22,att:.01,dec:.7,sus:.3,rel:.6,cut:.4,res:2,fenv:.3,rev:.4,dly:.3,cho:.6},
+};
+function applySound(){
+  const p=SOUNDS[S.sound]; Object.assign(S,{wave:p.wave,detune:p.detune,att:p.att,dec:p.dec,sus:p.sus});
+  S.cut=clamp(p.cut*(0.4+S.tone*1.2),0.05,1); S.res=p.res+S.tone*2; S.fenv=p.fenv;
+  S.rel=p.rel*(0.3+S.len*2.2);
+  if(ctx){ const t=ctx.currentTime;
+    revSend.gain.setTargetAtTime(p.rev*S.space*1.6,t,.05); dlySend.gain.setTargetAtTime(p.dly*S.space*1.6,t,.05);
+    window._cho.gain.setTargetAtTime(p.cho,t,.05); }
+  document.querySelectorAll('#sounds button').forEach(b=>b.classList.toggle('on2',b.dataset.sound===S.sound));
 }
 
 /* ============ SYNTH ============ */
@@ -328,7 +354,7 @@ function allNotesOff(){ [...voices.keys()].forEach(k=>noteOff(k)); }
 /* ============ DRUMS ============ */
 const DRUMS=[
   {name:'Kick',key:'Q'},{name:'Snare',key:'W'},{name:'Clap',key:'E'},{name:'Closed Hat',key:'R'},
-  {name:'Open Hat',key:'T'},{name:'Tom',key:'Y'},{name:'Rim',key:'U'},{name:'Perc',key:'I'}
+  {name:'Open Hat',key:'A'},{name:'Tom',key:'S'},{name:'Rim',key:'D'},{name:'Perc',key:'F'}
 ];
 let noiseBuf;
 function getNoise(){ if(noiseBuf) return noiseBuf; const b=ctx.createBuffer(1,ctx.sampleRate*2,ctx.sampleRate); const d=b.getChannelData(0); for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1; noiseBuf=b; return b; }
@@ -385,6 +411,77 @@ function playDrum(i, t=ctx.currentTime, vel=1){
   }
 }
 
+/* ============ TAP PADS ============ */
+const PERC=['Conga Lo','Conga Hi','Bongo','Shaker','Cowbell','Woodblock','Tamb','Clave'];
+function playPerc(i,t=ctx.currentTime,vel=1){
+  const out=ctx.createGain(); out.gain.value=.8*vel; out.connect(drumBus);
+  switch(i){
+    case 0: tone(t,'sine',190,150,.02,.9,.35,out); noise(t,.03,'lowpass',1500,1,.2,.02,out); break;
+    case 1: tone(t,'sine',330,270,.02,.8,.25,out); noise(t,.03,'lowpass',2500,1,.2,.02,out); break;
+    case 2: tone(t,'triangle',520,470,.015,.7,.12,out); break;
+    case 3: noise(t,.1,'bandpass',7000,1.5,.7,.08,out); noise(t+.01,.1,'highpass',9000,1,.3,.05,out); break;
+    case 4: tone(t,'square',562,562,.01,.3,.35,out); tone(t,'square',845,845,.01,.3,.3,out); break;
+    case 5: tone(t,'sine',1200,900,.01,.6,.06,out); tone(t,'triangle',2400,2000,.01,.3,.04,out); break;
+    case 6: for(let k=0;k<4;k++) noise(t+k*.008,.05,'highpass',7500,2,.4,.05+k*.02,out); tone(t,'sine',4200,4000,.01,.15,.08,out); break;
+    case 7: tone(t,'sine',2500,2400,.01,.7,.05,out); break;
+  }
+}
+const tapEls=[];
+function tapLabels(){
+  const sc=SCALES[S.scale];
+  switch(S.inst){
+    case 'drums': return DRUMS.map(d=>d.name);
+    case 'perc': return PERC;
+    case 'bass': return [0,2,4,7,9,12,14,16].map(i=>NOTE_NAMES[(S.key+sc[i%7])%12]);
+    case 'melody': return [0,1,2,3,4,5,6,7].map(i=>NOTE_NAMES[(S.key+sc[i%7])%12]);
+  }
+}
+function scaleNote(i, octOffset){ const sc=SCALES[S.scale]; return S.key+12*(S.oct+1+octOffset)+sc[i%7]+12*Math.floor(i/7); }
+function playBass(i,t=ctx.currentTime){
+  const idx=[0,2,4,7,9,12,14,16][i]; const m=scaleNote(idx,-2); const f=mtof(m);
+  const o=ctx.createOscillator(); o.type='sine'; o.frequency.setValueAtTime(f*1.5,t); o.frequency.exponentialRampToValueAtTime(f,t+.03);
+  const o2=ctx.createOscillator(); o2.type='sawtooth'; o2.frequency.value=f;
+  const lp=ctx.createBiquadFilter(); lp.type='lowpass'; lp.frequency.setValueAtTime(900,t); lp.frequency.exponentialRampToValueAtTime(140,t+.35); lp.Q.value=4;
+  const g=ctx.createGain(); g.gain.setValueAtTime(.001,t); g.gain.linearRampToValueAtTime(.9,t+.005); g.gain.exponentialRampToValueAtTime(.001,t+.7);
+  const g2=ctx.createGain(); g2.gain.value=.35;
+  o.connect(g); o2.connect(g2); g2.connect(lp); lp.connect(g); g.connect(drumBus); o.start(t); o2.start(t); o.stop(t+.8); o2.stop(t+.8);
+}
+function tap(i){
+  ensureCtx();
+  switch(S.inst){
+    case 'drums': playDrum(i); if(S.tapRec&&S.playing){ const st=nearestStep(); if(!S.drums[i][st]) S.drums[i][st]=1; drawDrums(); } break;
+    case 'perc': playPerc(i); break;
+    case 'bass': playBass(i); break;
+    case 'melody': noteOn('mel'+i,[scaleNote(i,1)],ctx.currentTime,1,0.35); break;
+  }
+  const el=tapEls[i]; el.classList.add('hit'); setTimeout(()=>el.classList.remove('hit'),110);
+}
+function buildTapPads(){
+  const c=$('tappads'); c.innerHTML=''; const keys=['Q','W','E','R','A','S','D','F'];
+  for(let i=0;i<8;i++){ const el=document.createElement('div'); el.className='tap'; el.innerHTML=`<span class="key">${keys[i]}</span><span class="lbl"></span><small></small>`;
+    el.addEventListener('pointerdown',e=>{e.preventDefault();tap(i);}); c.appendChild(el); tapEls.push(el); }
+  drawTapPads();
+}
+function drawTapPads(){ const L=tapLabels(); tapEls.forEach((el,i)=>{ el.querySelector('.lbl').textContent=L[i]; el.querySelector('small').textContent=S.inst==='drums'?S.kit:S.inst==='perc'?'':S.inst==='bass'?'bass':SOUNDS[S.sound].label; }); }
+let uiStepTime=0;
+function nearestStep(){ const off=Math.round((ctx.currentTime-uiStepTime)/stepDur()); return ((uiStep<0?0:uiStep)+off+16)%16; }
+
+/* ============ STRUM RIBBON ============ */
+let ribbonLast=-1, ribbonDown=false;
+function ribbonNotes(){ const src=heldChord?heldChord.notes:chordFor(lastDegree).notes; return [...src,...src.map(n=>n+12)]; }
+let lastDegree=0;
+function ribbonAt(x){
+  const r=$('ribbon').getBoundingClientRect(); const notes=ribbonNotes(); const idx=clamp(Math.floor((x-r.left)/r.width*notes.length),0,notes.length-1);
+  if(idx!==ribbonLast){ ribbonLast=idx; noteOn('rib'+idx,[notes[idx]],ctx.currentTime,.9,0.5); }
+}
+function buildRibbon(){
+  const el=$('ribbon');
+  el.addEventListener('pointerdown',e=>{ensureCtx();ribbonDown=true;ribbonLast=-1;el.classList.add('hit');el.setPointerCapture(e.pointerId);ribbonAt(e.clientX);});
+  el.addEventListener('pointermove',e=>{if(ribbonDown)ribbonAt(e.clientX);});
+  const up=()=>{ribbonDown=false;el.classList.remove('hit');};
+  el.addEventListener('pointerup',up); el.addEventListener('pointercancel',up);
+}
+
 /* ============ SEQUENCER ============ */
 let nextStepTime=0, timer=null, uiStep=-1;
 const LOOKAHEAD=0.1, TICK=25;
@@ -407,7 +504,7 @@ function schedule(){
       cseqPos=(cseqPos+1)%16;
     }
     const s=step;
-    setTimeout(()=>drawStep(s, S.cseqOn ? (cseqPos+15)%16 : -1), Math.max(0,(t-ctx.currentTime)*1000));
+    const st=t; setTimeout(()=>{uiStepTime=st;drawStep(s, S.cseqOn ? (cseqPos+15)%16 : -1);}, Math.max(0,(t-ctx.currentTime)*1000));
     nextStepTime += stepDur();
     S.step=(S.step+1)%16; if(S.step===0) bar++;
   }
@@ -464,7 +561,7 @@ setInterval(()=>{ if(ctx && !S.playing && S.arp && curArpChord){ if(!arpRunning)
 /* ============ CHORD PAD INTERACTION ============ */
 const activeDegrees=new Set();
 function chordDown(d, viaKey){
-  const ch=chordFor(d);
+  lastDegree=d; const ch=chordFor(d);
   const id='pad'+d;
   if(S.latch){ // toggle
     if(heldChord && heldChord.d===d && voices.has(heldChord.id) && !S.arp){ noteOff(heldChord.id); heldChord=null; curArpChord=null; drawPad(); return; }
@@ -586,46 +683,38 @@ function flashBtn(b,txt){ const o=b.textContent; b.textContent=txt; setTimeout((
 
 /* ============ UI WIRING ============ */
 function ensureCtx(){ if(!ctx){ initAudio(); } if(ctx.state==='suspended') ctx.resume(); }
-function updateDelayTime(){ if(dlyNode) dlyNode.delayTime.setTargetAtTime(60/S.bpm*parseFloat($('dlyT').value),ctx.currentTime,.05); }
+function updateDelayTime(){ if(dlyNode) dlyNode.delayTime.setTargetAtTime(60/S.bpm*0.75,ctx.currentTime,.05); }
 function bindRange(id, fn, fmt){ const el=$(id), out=$(id+'V'); const h=()=>{ const v=parseFloat(el.value); fn(v); if(out) out.textContent=fmt(v); }; el.addEventListener('input',()=>{ensureCtx();h();}); return h; }
 const uiHandlers=[];
 function syncUI(){
-  $('bpm').value=S.bpm; $('swing').value=S.swing; $('key').value=S.key; $('scale').value=S.scale; $('oct').value=S.oct; $('voicing').value=S.voicing; $('kit').value=S.kit;
-  $('wave').value=S.wave; $('detune').value=S.detune; $('att').value=S.att*100; $('dec').value=S.dec*100; $('sus').value=S.sus*100; $('rel').value=S.rel*50; $('cut').value=S.cut*100; $('res').value=S.res*100/12; $('fenv').value=S.fenv*100;
+  $('bpm').value=S.bpm; $('swing').value=S.swing; $('key').value=S.key; $('scale').value=S.scale; $('octV').textContent=S.oct; $('voicingBtn').textContent=VOICINGS[S.voicing]; $('kit').value=S.kit;
+  $('tone').value=S.tone*100; $('space').value=S.space*100; $('len').value=S.len*100; applySound();
+  document.querySelectorAll('[data-inst]').forEach(b=>b.classList.toggle('on',b.dataset.inst===S.inst)); $('tapRec').classList.toggle('on',S.tapRec); drawTapPads();
   document.querySelectorAll('[data-mod]').forEach(b=>b.classList.toggle('on',!!S.mods[b.dataset.mod]));
   $('latch').classList.toggle('on',S.latch); $('arpOn').classList.toggle('on2',S.arp); $('arpMode').value=S.arpMode; $('arpRate').value=S.arpRate; $('arpOcts').value=S.arpOcts;
   $('cseqOn').classList.toggle('on2',S.cseqOn); $('cseqRec').classList.toggle('on',S.cseqRec);
   document.querySelectorAll('#drumgrid .vol').forEach((v,i)=>v.value=S.drumVol[i]*100);
-  uiHandlers.forEach(h=>h()); drawDrums(); drawCseq(); drawPad();
+  uiHandlers.forEach(h=>h()); drawDrums(); drawCseq(); drawPad(); applySound();
 }
 function wire(){
   // key select
   NOTE_NAMES.forEach((n,i)=>{const o=document.createElement('option');o.value=i;o.textContent=n;$('key').appendChild(o);});
-  $('key').addEventListener('change',e=>{S.key=+e.target.value;drawPad();drawCseq();});
-  $('scale').addEventListener('change',e=>{S.scale=e.target.value;drawPad();drawCseq();});
-  $('oct').addEventListener('change',e=>{S.oct=+e.target.value;drawPad();});
-  $('voicing').addEventListener('change',e=>{S.voicing=e.target.value;drawPad();});
-  $('kit').addEventListener('change',e=>S.kit=e.target.value);
+  $('key').addEventListener('change',e=>{S.key=+e.target.value;drawPad();drawCseq();drawTapPads();});
+  $('scale').addEventListener('change',e=>{S.scale=e.target.value;drawPad();drawCseq();drawTapPads();});
+  $('octDn').addEventListener('click',()=>{S.oct=clamp(S.oct-1,1,5);$('octV').textContent=S.oct;drawPad();drawTapPads();});
+  $('octUp').addEventListener('click',()=>{S.oct=clamp(S.oct+1,1,5);$('octV').textContent=S.oct;drawPad();drawTapPads();});
+  $('voicingBtn').addEventListener('click',()=>{const ks=Object.keys(VOICINGS);S.voicing=ks[(ks.indexOf(S.voicing)+1)%ks.length];$('voicingBtn').textContent=VOICINGS[S.voicing];drawPad();});
+  $('kit').addEventListener('change',e=>{S.kit=e.target.value;drawTapPads();});
+  Object.entries(SOUNDS).forEach(([k,p])=>{const b=document.createElement('button');b.dataset.sound=k;b.textContent=p.label;b.addEventListener('click',()=>{ensureCtx();S.sound=k;applySound();drawTapPads();});$('sounds').appendChild(b);});
+  document.querySelectorAll('[data-inst]').forEach(b=>b.addEventListener('click',()=>{S.inst=b.dataset.inst;document.querySelectorAll('[data-inst]').forEach(x=>x.classList.toggle('on',x===b));drawTapPads();}));
+  $('tapRec').addEventListener('click',()=>{S.tapRec=!S.tapRec;$('tapRec').classList.toggle('on',S.tapRec);});
   $('bpm').addEventListener('change',e=>{S.bpm=clamp(+e.target.value||96,40,240);e.target.value=S.bpm;if(ctx)updateDelayTime();});
   uiHandlers.push(bindRange('swing',v=>S.swing=v,v=>v+'%'));
   uiHandlers.push(bindRange('master',v=>{if(master)master.gain.setTargetAtTime(v/100,ctx.currentTime,.02)},v=>v+'%'));
-  $('wave').addEventListener('change',e=>S.wave=e.target.value);
-  uiHandlers.push(bindRange('detune',v=>S.detune=v,v=>v+'c'));
-  uiHandlers.push(bindRange('att',v=>S.att=v/100,v=>(v/100).toFixed(2)+'s'));
-  uiHandlers.push(bindRange('dec',v=>S.dec=v/100,v=>(v/100).toFixed(2)+'s'));
-  uiHandlers.push(bindRange('sus',v=>S.sus=v/100,v=>v+'%'));
-  uiHandlers.push(bindRange('rel',v=>S.rel=v/50,v=>(v/50).toFixed(2)+'s'));
-  uiHandlers.push(bindRange('cut',v=>S.cut=v/100,v=>{const hz=80*Math.pow(2,v/100*7.3);return hz>=1000?(hz/1000).toFixed(1)+'k':Math.round(hz)+'Hz'}));
-  uiHandlers.push(bindRange('res',v=>S.res=v/100*12,v=>(v/100*12).toFixed(1)));
-  uiHandlers.push(bindRange('fenv',v=>S.fenv=v/100,v=>v+'%'));
+  uiHandlers.push(bindRange('tone',v=>{S.tone=v/100;applySound();},v=>v+'%'));
+  uiHandlers.push(bindRange('space',v=>{S.space=v/100;applySound();},v=>v+'%'));
+  uiHandlers.push(bindRange('len',v=>{S.len=v/100;applySound();},v=>v+'%'));
   uiHandlers.push(bindRange('svol',v=>{if(synthBus)synthBus.gain.setTargetAtTime(v/100,ctx.currentTime,.02)},v=>v+'%'));
-  uiHandlers.push(bindRange('rev',v=>{if(revSend)revSend.gain.setTargetAtTime(v/100*0.8,ctx.currentTime,.02)},v=>v+'%'));
-  uiHandlers.push(bindRange('dly',v=>{if(dlySend)dlySend.gain.setTargetAtTime(v/100*0.7,ctx.currentTime,.02)},v=>v+'%'));
-  $('dlyT').addEventListener('change',()=>{ensureCtx();updateDelayTime();$('dlyTV').textContent=$('dlyT').selectedOptions[0].textContent;});
-  uiHandlers.push(bindRange('fb',v=>{if(dlyFb)dlyFb.gain.setTargetAtTime(v/100,ctx.currentTime,.02)},v=>v+'%'));
-  uiHandlers.push(bindRange('cho',v=>{if(window._cho)window._cho.gain.setTargetAtTime(v/100,ctx.currentTime,.02)},v=>v+'%'));
-  uiHandlers.push(bindRange('drv',v=>{if(driveShaper)driveShaper.curve=makeDriveCurve(v/100)},v=>v+'%'));
-  $('comp').addEventListener('change',e=>{ensureCtx(); const on=e.target.value==='1'; comp.ratio.setValueAtTime(on?4:1,ctx.currentTime); comp.threshold.setValueAtTime(on?-14:0,ctx.currentTime); $('compV').textContent=on?'On':'Off';});
   // mods
   document.querySelectorAll('[data-mod]').forEach(b=>b.addEventListener('click',()=>{ const m=b.dataset.mod; S.mods[m]=!S.mods[m]; if(m==='dim'&&S.mods.dim){S.mods.sus=false;} if(m==='sus'&&S.mods.sus){S.mods.dim=false;} syncMods(); }));
   $('latch').addEventListener('click',()=>{S.latch=!S.latch; $('latch').classList.toggle('on',S.latch); if(!S.latch && heldChord && !activeDegrees.has(heldChord.d)){ noteOff(heldChord.id); heldChord=null; curArpChord=null; arpRunning=false; drawPad(); }});
@@ -646,7 +735,7 @@ function wire(){
   $('rec').addEventListener('click',toggleRec);
   $('save').addEventListener('click',saveState); $('load').addEventListener('click',()=>{ensureCtx();loadState();});
   // keyboard
-  const drumKeys={q:0,w:1,e:2,r:3,t:4,y:5,u:6,i:7};
+  const drumKeys={q:0,w:1,e:2,r:3,a:4,s:5,d:6,f:7};
   const keyMods=e=>({shift:e.shiftKey,alt:e.altKey,ctrl:e.ctrlKey||e.metaKey});
   let tempMods=null;
   window.addEventListener('keydown',e=>{
@@ -654,7 +743,7 @@ function wire(){
     if(e.repeat) return;
     const k=e.key.toLowerCase();
     if(k===' '){e.preventDefault(); ensureCtx(); S.playing?stop():play(); return;}
-    if(k in drumKeys){ ensureCtx(); playDrum(drumKeys[k]); flashDrum(drumKeys[k]); return; }
+    if(k in drumKeys){ tap(drumKeys[k]); return; }
     const d=parseInt(k)-1;
     if(d>=0&&d<7){ e.preventDefault(); ensureCtx();
       const km=keyMods(e); const save={...S.mods};
@@ -668,12 +757,11 @@ function wire(){
   const meter=$('meter');
   (function loop(){ requestAnimationFrame(loop); if(!analyser) return; analyser.getByteTimeDomainData(meterData); let p=0; for(let i=0;i<meterData.length;i++){const v=Math.abs(meterData[i]-128)/128; if(v>p)p=v;} meter.style.width=Math.min(100,p*130)+'%'; })();
 }
-function flashDrum(i){ const n=$('drumgrid').querySelectorAll('.name')[i]; n.style.color='var(--acc)'; setTimeout(()=>n.style.color='',120); }
 function syncMods(){ document.querySelectorAll('[data-mod]').forEach(b=>b.classList.toggle('on',!!S.mods[b.dataset.mod])); drawPad();
   if(heldChord && (S.latch||activeDegrees.has(heldChord.d))){ const ch=chordFor(heldChord.d); heldChord.notes=ch.notes; if(S.arp){curArpChord={notes:ch.notes};} else noteOn(heldChord.id,ch.notes); }
 }
 
-buildPad(); buildCseq(); buildDrumGrid(); wire();
+buildPad(); buildCseq(); buildDrumGrid(); buildTapPads(); buildRibbon(); wire(); applySound();
 document.querySelectorAll('[data-mod]').forEach(b=>b.classList.toggle('on',!!S.mods[b.dataset.mod]));
 })();
 </script>
