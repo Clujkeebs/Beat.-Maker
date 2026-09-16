@@ -1,4 +1,4 @@
-# Beat Maker — digital Hichord
+# Hichord — Beat Maker
 
 A free, one-page browser instrument: a Hichord-style chord pad (7 chord buttons, key/scale, chord modifiers, arpeggiator, synth engine with filter, delay and reverb) plus a 16-step drum machine with synthesized kits, swing, presets, and record-to-file.
 

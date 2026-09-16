@@ -3,210 +3,265 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Beat Maker — Digital Hichord</title>
+<title>Hichord — Beat Maker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#0f0f13;--panel:#181822;--panel2:#20202c;--line:#2c2c3a;
-    --text:#e8e8f0;--muted:#8a8aa0;--acc:#ff5a3c;--acc2:#3cd7ff;--acc3:#c3ff3c;--warn:#ffb13c;
+    --bg:#0b0b0e;--chassis:#2a2b30;--chassis2:#1c1d21;--edge:#3a3b42;--ink:#101114;
+    --text:#f2f2f4;--muted:#9a9ba6;--lcd:#9fe870;--lcdbg:#0e1a0c;
+    --c1:#ff4d4d;--c2:#ff9a2e;--c3:#ffd93c;--c4:#6fe36b;--c5:#3cc9ff;--c6:#7a6bff;--c7:#ff5fd0;
+    --rec:#ff2d2d;--go:#5cff8a;
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none}
-  html,body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;font-size:14px}
-  body{padding:14px;max-width:1240px;margin:0 auto}
-  header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:12px}
-  h1{font-size:20px;margin:0;letter-spacing:1px}
-  h1 span{color:var(--acc)}
-  h2{font-size:12px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin:0 0 10px}
-  .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:12px}
+  html,body{margin:0;background:radial-gradient(1200px 700px at 50% -10%,#1b1c22,var(--bg));color:var(--text);font-family:"Space Grotesk",system-ui,sans-serif;font-size:14px;min-height:100vh}
+  body{padding:18px 12px 40px;display:flex;flex-direction:column;align-items:center}
+  button{font:inherit;color:var(--text);border:0;cursor:pointer}
+  select,input[type=number]{background:var(--ink);color:var(--text);border:1px solid var(--edge);border-radius:6px;padding:6px 8px;font:inherit}
+
+  /* ---------- chassis ---------- */
+  .device{width:100%;max-width:1080px;background:linear-gradient(180deg,#31323a,#232428 60%,#1d1e22);border-radius:26px;padding:16px;border:1px solid #45464f;box-shadow:0 30px 80px rgba(0,0,0,.7),inset 0 1px 0 rgba(255,255,255,.08),inset 0 -6px 0 #101114}
+  .screw{position:absolute;width:10px;height:10px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#777,#222);box-shadow:inset 0 0 0 1px #000}
+  .device{position:relative}
+  .device .screw:nth-of-type(1){top:10px;left:12px}.device .screw:nth-of-type(2){top:10px;right:12px}.device .screw:nth-of-type(3){bottom:10px;left:12px}.device .screw:nth-of-type(4){bottom:10px;right:12px}
+
+  /* ---------- top bar ---------- */
+  .top{display:grid;grid-template-columns:150px 1fr 150px;gap:14px;align-items:center;margin-bottom:14px}
+  .brand{font-weight:700;letter-spacing:3px;font-size:18px}
+  .brand small{display:block;font-size:9px;letter-spacing:2px;color:var(--muted);font-weight:500}
+  .lcd{background:var(--lcdbg);border-radius:8px;border:3px solid #0a0a0c;box-shadow:inset 0 0 18px rgba(0,0,0,.9),0 0 0 1px #3a3b42;padding:8px 14px;font-family:"Share Tech Mono",monospace;color:var(--lcd);text-shadow:0 0 6px rgba(159,232,112,.6);display:grid;grid-template-columns:1fr auto;gap:4px 16px;min-height:56px}
+  .lcd .big{font-size:24px;line-height:1}
+  .lcd .sm{font-size:12px;opacity:.85;letter-spacing:1px}
+  .lcd .r{text-align:right}
+  .topright{display:flex;justify-content:flex-end;align-items:center;gap:10px}
+  .meter{width:70px;height:8px;background:#0a0a0c;border-radius:4px;overflow:hidden;border:1px solid #3a3b42}
+  .meter i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--go),#ffd93c,var(--rec))}
+  .knob{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:9px;letter-spacing:1px;color:var(--muted)}
+  .knob input[type=range]{width:64px;accent-color:#ddd}
+
+  /* ---------- main ---------- */
+  .main{display:grid;grid-template-columns:1.45fr 1fr;gap:14px}
+  .section{background:var(--chassis2);border-radius:16px;padding:12px;border:1px solid #14151a;box-shadow:inset 0 2px 8px rgba(0,0,0,.6)}
+  .label{font-size:9px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+  .label .grow{flex:1}
+
+  .chordpad{display:grid;grid-template-columns:repeat(7,1fr);gap:8px}
+  .chord{position:relative;height:150px;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding-bottom:12px;font-weight:700;font-size:22px;color:#101114;cursor:pointer;
+    box-shadow:0 6px 0 rgba(0,0,0,.45),inset 0 2px 0 rgba(255,255,255,.35),inset 0 -4px 0 rgba(0,0,0,.18);transition:transform .04s,box-shadow .04s,filter .1s;filter:saturate(.85) brightness(.92)}
+  .chord small{font-size:11px;font-weight:700;opacity:.75;margin-top:2px}
+  .chord .key{position:absolute;top:8px;left:10px;font-size:10px;opacity:.6}
+  .chord:nth-child(1){background:var(--c1)}.chord:nth-child(2){background:var(--c2)}.chord:nth-child(3){background:var(--c3)}.chord:nth-child(4){background:var(--c4)}.chord:nth-child(5){background:var(--c5)}.chord:nth-child(6){background:var(--c6)}.chord:nth-child(7){background:var(--c7)}
+  .chord.on{transform:translateY(5px);box-shadow:0 1px 0 rgba(0,0,0,.45),inset 0 2px 0 rgba(255,255,255,.35);filter:saturate(1.3) brightness(1.12)}
+  .ribbon{margin-top:10px;height:30px;border-radius:15px;background:linear-gradient(180deg,#0e0f12,#1a1b20);border:1px solid #3a3b42;cursor:ew-resize;position:relative;touch-action:none;box-shadow:inset 0 2px 6px rgba(0,0,0,.8)}
+  .ribbon::before{content:'';position:absolute;inset:6px 14px;border-radius:10px;background:repeating-linear-gradient(90deg,transparent 0 22px,#2a2b32 22px 24px)}
+  .ribbon::after{content:'STRUM ◂ ▸';position:absolute;right:16px;top:8px;font-size:9px;letter-spacing:2px;color:var(--muted)}
+  .ribbon.hit{box-shadow:inset 0 0 0 2px var(--c5),inset 0 2px 6px rgba(0,0,0,.8)}
+  .mods{display:flex;gap:8px;margin-top:12px;align-items:center;flex-wrap:wrap}
+  .pill{height:34px;padding:0 14px;border-radius:17px;background:linear-gradient(180deg,#3b3c45,#26272d);box-shadow:0 3px 0 #0d0e11,inset 0 1px 0 rgba(255,255,255,.12);font-weight:700;font-size:12px;letter-spacing:.5px}
+  .pill:active{transform:translateY(2px);box-shadow:0 1px 0 #0d0e11}
+  .pill.on{background:linear-gradient(180deg,#ffe27a,#ffc933);color:#241b00;box-shadow:0 3px 0 #6b5200,0 0 14px rgba(255,201,51,.45)}
+  .pill.on2{background:linear-gradient(180deg,#7fe0ff,#33bfff);color:#002333;box-shadow:0 3px 0 #005c80,0 0 14px rgba(51,191,255,.45)}
+  .mods select{height:34px;border-radius:17px;padding:0 10px;background:#15161a}
+
+  .tappads{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+  .tap{position:relative;height:66px;border-radius:10px;background:linear-gradient(180deg,#3e3f48,#2c2d34);border:1px solid #16171b;box-shadow:0 4px 0 #0d0e11,inset 0 1px 0 rgba(255,255,255,.1);display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:700;font-size:12px;cursor:pointer;touch-action:none;color:#e7e7ea}
+  .tap small{font-size:9px;color:var(--muted);font-weight:500;margin-top:2px}
+  .tap .key{position:absolute;top:5px;left:7px;font-size:9px;color:var(--muted)}
+  .tap.hit{background:linear-gradient(180deg,#c9ff7a,#8fe03a);color:#122000;transform:translateY(3px);box-shadow:0 1px 0 #0d0e11,0 0 16px rgba(143,224,58,.6)}
+  .tap.hit small,.tap.hit .key{color:#2a4a00}
+  .seg{display:flex;background:#0e0f12;border-radius:8px;padding:3px;gap:3px;border:1px solid #3a3b42}
+  .seg button{flex:1;padding:6px 8px;border-radius:6px;font-size:11px;font-weight:700;background:transparent;color:var(--muted)}
+  .seg button.on{background:#3b3c45;color:#fff;box-shadow:inset 0 1px 0 rgba(255,255,255,.12)}
+  .sliders{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}
+  .sl{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:9px;letter-spacing:1px;color:var(--muted);text-transform:uppercase}
+  .sl b{color:#fff;font-size:11px}
+  .sl input{width:100%;accent-color:#ffc933}
+
+  /* ---------- bottom ---------- */
+  .bottom{display:grid;grid-template-columns:auto 1fr auto;gap:14px;margin-top:14px;align-items:stretch}
+  .transport{display:flex;gap:10px;align-items:center}
+  .round{width:74px;height:74px;border-radius:50%;font-size:26px;background:radial-gradient(circle at 40% 35%,#4a4b55,#23242a);box-shadow:0 6px 0 #0d0e11,inset 0 2px 0 rgba(255,255,255,.15);color:#fff}
+  .round:active{transform:translateY(4px);box-shadow:0 2px 0 #0d0e11}
+  .round.on{background:radial-gradient(circle at 40% 35%,#8dffb0,#2ecc6a);color:#00301a;box-shadow:0 6px 0 #0c4a25,0 0 22px rgba(92,255,138,.5)}
+  .round.rec.on{background:radial-gradient(circle at 40% 35%,#ff7a7a,#d61e1e);color:#fff;box-shadow:0 6px 0 #5a0b0b,0 0 22px rgba(255,45,45,.6);animation:blink 1s infinite}
+  @keyframes blink{50%{filter:brightness(.75)}}
+  .bpm{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:9px;letter-spacing:2px;color:var(--muted)}
+  .bpm input{width:76px;font-family:"Share Tech Mono",monospace;font-size:26px;text-align:center;background:var(--lcdbg);color:var(--lcd);border:2px solid #0a0a0c;text-shadow:0 0 6px rgba(159,232,112,.6)}
+  .pedalbox{display:flex;flex-direction:column;gap:6px}
+  .pedals{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;flex:1}
+  .pedal{border-radius:10px;font-size:13px;font-weight:700;letter-spacing:.5px;background:linear-gradient(180deg,#4a4b55,#2c2d34);box-shadow:0 6px 0 #0d0e11,inset 0 1px 0 rgba(255,255,255,.15);min-height:60px}
+  .pedal:active{transform:translateY(4px);box-shadow:0 2px 0 #0d0e11}
+  .pedal.rec.on{background:linear-gradient(180deg,#ff6b6b,#d61e1e);box-shadow:0 6px 0 #5a0b0b,0 0 18px rgba(255,45,45,.5);animation:blink 1s infinite}
+  .pedal.on2{background:linear-gradient(180deg,#7fe0ff,#33bfff);color:#002333;box-shadow:0 6px 0 #005c80}
+  .loopbar{height:5px;background:#0e0f12;border-radius:3px;overflow:hidden;border:1px solid #3a3b42}
+  .loopbar i{display:block;height:100%;width:0;background:var(--c5)}
+  .side{display:flex;flex-direction:column;gap:8px;justify-content:center}
+  .side .pill{white-space:nowrap}
+  .hint{color:var(--muted);font-size:10px}
+
+  /* ---------- studio drawer ---------- */
+  #studio{width:100%;max-width:1080px;margin-top:14px;display:none;flex-direction:column;gap:12px}
+  #studio.open{display:flex}
+  .panel{background:#15161a;border:1px solid #2a2b32;border-radius:14px;padding:14px}
   .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
   .grow{flex:1}
-  button{background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:8px 12px;font:inherit;cursor:pointer;transition:transform .05s,background .1s}
-  button:hover{background:#2a2a3a}
-  button:active{transform:scale(.97)}
-  button.on{background:var(--acc);border-color:var(--acc);color:#111;font-weight:600}
-  button.on2{background:var(--acc2);border-color:var(--acc2);color:#111;font-weight:600}
-  button.big{padding:12px 22px;font-size:15px;font-weight:700}
-  button.rec.on{background:#ff2a2a;border-color:#ff2a2a;color:#fff;animation:blink 1s infinite}
-  @keyframes blink{50%{opacity:.6}}
-  select,input[type=number]{background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:7px 9px;font:inherit}
-  label.ctl{display:flex;flex-direction:column;gap:4px;font-size:11px;color:var(--muted);min-width:90px}
-  label.ctl b{color:var(--text);font-weight:500;font-size:12px}
-  input[type=range]{width:100%;accent-color:var(--acc);margin:0}
-  .transport{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-  .bpm{display:flex;align-items:center;gap:6px}
-  .bpm input{width:70px;font-size:16px;font-weight:700;text-align:center}
+  .panel button{background:#26272d;border:1px solid #3a3b42;border-radius:8px;padding:7px 11px;font-size:12px;font-weight:600}
+  .panel button.on{background:#ffc933;border-color:#ffc933;color:#241b00}
+  .panel button.on2{background:#33bfff;border-color:#33bfff;color:#002333}
+  .ctl{display:flex;flex-direction:column;gap:3px;font-size:10px;color:var(--muted);letter-spacing:1px;text-transform:uppercase}
+  .ctl b{color:#fff;font-size:12px;letter-spacing:0}
+  .ctl input[type=range]{width:110px;accent-color:#ffc933}
   .grid-wrap{overflow-x:auto}
-  .drumgrid{display:grid;grid-template-columns:120px repeat(16,minmax(30px,1fr)) 60px;gap:4px;min-width:760px}
+  .drumgrid{display:grid;grid-template-columns:110px repeat(16,minmax(28px,1fr)) 60px;gap:4px;min-width:760px}
   .drumgrid .name{display:flex;align-items:center;gap:6px;font-size:12px;padding-left:4px;cursor:pointer;border-radius:6px}
-  .drumgrid .name:hover{background:var(--panel2)}
-  .drumgrid .name .key{color:var(--muted);font-size:10px;border:1px solid var(--line);border-radius:4px;padding:1px 4px}
-  .step{height:32px;border-radius:6px;background:var(--panel2);border:1px solid var(--line);cursor:pointer;position:relative}
-  .step.beat{background:#262634}
-  .step.on{background:var(--acc);border-color:var(--acc)}
-  .step.on.soft{background:#b0402c}
-  .step.cur{box-shadow:inset 0 0 0 2px var(--acc3)}
-  .stephead{height:8px;border-radius:3px;background:var(--line)}
-  .stephead.cur{background:var(--acc3)}
-  .vol{width:100%;accent-color:var(--acc2)}
-  .chordpad{display:grid;grid-template-columns:repeat(7,1fr);gap:8px}
-  .chord{height:96px;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:22px;font-weight:700;background:linear-gradient(180deg,#26263a,#1c1c28);border:1px solid var(--line)}
-  .chord small{font-size:11px;color:var(--muted);font-weight:400;margin-top:4px}
-  .chord.on{background:linear-gradient(180deg,var(--acc2),#1a8fb0);color:#081018;border-color:var(--acc2)}
-  .chord.on small{color:#082030}
-  .chord .key{position:absolute;top:6px;left:8px;font-size:10px;color:var(--muted)}
-  .chord{position:relative}
-  .mods button{min-width:64px}
+  .drumgrid .name .key{color:var(--muted);font-size:9px;border:1px solid #3a3b42;border-radius:4px;padding:1px 4px}
+  .step{height:28px;border-radius:5px;background:#22232a;border:1px solid #2e2f37;cursor:pointer}
+  .step.beat{background:#2a2b33}
+  .step.on{background:#ff9a2e;border-color:#ff9a2e}
+  .step.on.soft{background:#9c5d1a}
+  .step.cur{box-shadow:inset 0 0 0 2px var(--go)}
+  .stephead{height:6px;border-radius:3px;background:#2e2f37}
+  .stephead.cur{background:var(--go)}
+  .vol{width:100%;accent-color:#33bfff}
   .seq16{display:grid;grid-template-columns:repeat(16,1fr);gap:4px}
-  .cstep{height:44px;border-radius:6px;background:var(--panel2);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;cursor:pointer;color:var(--muted)}
-  .cstep.beat{background:#262634}
-  .cstep.has{color:#081018;background:var(--acc2);border-color:var(--acc2)}
-  .cstep.cur{box-shadow:inset 0 0 0 2px var(--acc3)}
-  .two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-  @media (max-width:900px){.two{grid-template-columns:1fr}.chord{height:72px;font-size:16px}}
-  .knobs{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px}
-  .hint{color:var(--muted);font-size:11px}
-  .presets button{font-size:12px;padding:6px 10px}
-  #start{position:fixed;inset:0;background:rgba(10,10,16,.94);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px;z-index:99;text-align:center;padding:20px}
-  #start h1{font-size:34px}
-  #start p{color:var(--muted);max-width:520px;line-height:1.5}
-  .meter{height:6px;background:var(--line);border-radius:3px;overflow:hidden;width:120px}
-  .meter i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--acc3),var(--warn),var(--acc))}
-  .ribbon{margin-top:8px;height:34px;border-radius:8px;background:repeating-linear-gradient(90deg,#20202c 0 12.5%,#262634 12.5% 25%);border:1px solid var(--line);cursor:ew-resize;position:relative;touch-action:none}
-  .ribbon::after{content:'STRUM';position:absolute;right:8px;top:9px;font-size:10px;letter-spacing:2px;color:var(--muted)}
-  .ribbon.hit{box-shadow:inset 0 0 0 2px var(--acc2)}
-  .sounds button{min-width:80px}
-  .tappads{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
-  .tap{height:78px;border-radius:12px;background:linear-gradient(180deg,#2a2a3c,#1e1e2a);border:1px solid var(--line);display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:700;font-size:14px;cursor:pointer;touch-action:none;position:relative}
-  .tap small{font-size:10px;color:var(--muted);font-weight:400;margin-top:3px}
-  .tap .key{position:absolute;top:5px;left:8px;font-size:10px;color:var(--muted)}
-  .tap.hit{background:linear-gradient(180deg,var(--acc3),#8fc22a);color:#101a05;transform:scale(.97)}
-  .tap.hit small,.tap.hit .key{color:#20320a}
-  .pedals{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:10px 0}
-  .pedal{height:64px;font-size:15px;font-weight:700;border-radius:14px;background:linear-gradient(180deg,#2c2c3e,#1c1c28);box-shadow:0 4px 0 #101018}
-  .pedal:active{transform:translateY(3px);box-shadow:0 1px 0 #101018}
-  .pedal.rec.on{background:#ff2a2a;border-color:#ff2a2a;color:#fff;animation:blink 1s infinite}
-  .loopbar{height:6px;background:var(--line);border-radius:3px;overflow:hidden}
-  .loopbar i{display:block;height:100%;width:0;background:var(--acc2)}
-  .tap{height:64px}
-  footer{color:var(--muted);font-size:11px;text-align:center;padding:10px}
+  .cstep{height:40px;border-radius:6px;background:#22232a;border:1px solid #2e2f37;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;cursor:pointer;color:var(--muted)}
+  .cstep.beat{background:#2a2b33}
+  .cstep.has{color:#002333;background:#33bfff;border-color:#33bfff}
+  .cstep.cur{box-shadow:inset 0 0 0 2px var(--go)}
+
+  #start{position:fixed;inset:0;background:rgba(6,6,8,.96);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;z-index:99;text-align:center;padding:20px}
+  #start h1{font-size:40px;letter-spacing:6px;margin:0}
+  #start p{color:var(--muted);max-width:520px;line-height:1.5;margin:0}
+  #startBtn{width:120px;height:120px;border-radius:50%;font-size:14px;letter-spacing:2px;font-weight:700;background:radial-gradient(circle at 40% 35%,#ff7a7a,#d61e1e);box-shadow:0 8px 0 #5a0b0b,0 0 40px rgba(255,45,45,.5);color:#fff}
+  #startBtn:active{transform:translateY(6px);box-shadow:0 2px 0 #5a0b0b}
+
+  @media (max-width:860px){
+    .main,.bottom{grid-template-columns:1fr}.top{grid-template-columns:1fr}.topright{justify-content:flex-start}
+    .chord{height:110px;font-size:16px}.pedals{grid-template-columns:repeat(2,1fr)}.device{padding:12px;border-radius:18px}
+  }
 </style>
 </head>
 <body>
 
 <div id="start">
-  <h1>BEAT <span style="color:var(--acc)">MAKER</span></h1>
-  <p>A digital Hichord: 7-button chord pad with modifiers, arpeggiator and a real synth engine, plus a 16-step drum machine. Everything runs in your browser, free, no account.</p>
-  <button class="big on" id="startBtn">Tap to power on</button>
-  <p class="hint">Keys 1–7 = chords · Q W E R A S D F = tap pads · Space = play/stop · Shift = 7th · Alt = sus · Ctrl = maj/min swap</p>
+  <h1>HICHORD</h1>
+  <p>A digital Hichord. Seven chord keys, a strum ribbon, twelve tap pads, loop pedals and a drum machine. Free, in your browser.</p>
+  <button id="startBtn">POWER</button>
+  <p class="hint">Keys 1–7 chords · Q W E R / A S D F / Z X C V pads · Space play · L loop · Shift 7th · Alt sus · Ctrl maj/min</p>
 </div>
 
-<header>
-  <h1>BEAT <span>MAKER</span> <span style="color:var(--muted);font-size:12px;font-weight:400;letter-spacing:0">digital hichord</span></h1>
-  <div class="transport">
-    <button class="big" id="play">▶ Play</button>
-    <div class="bpm"><span class="hint">BPM</span><input type="number" id="bpm" min="40" max="240" value="96"></div>
-    <label class="ctl" style="min-width:110px"><span>Swing <b id="swingV">0%</b></span><input type="range" id="swing" min="0" max="70" value="0"></label>
-    <label class="ctl" style="min-width:110px"><span>Master <b id="masterV">80%</b></span><input type="range" id="master" min="0" max="100" value="80"></label>
-    <div class="meter"><i id="meter"></i></div>
-    <button class="rec" id="rec">● Record</button>
-    <button id="save">Save</button>
-    <button id="load">Load</button>
-  </div>
-</header>
-
-<div class="panel">
-  <div class="row" style="margin-bottom:10px">
-    <h2 style="margin:0" class="grow">Hichord</h2>
-    <label class="ctl" style="min-width:auto"><span>Key</span><select id="key"></select></label>
-    <label class="ctl" style="min-width:auto"><span>Scale</span><select id="scale">
-      <option value="major">Major</option><option value="minor">Minor</option><option value="dorian">Dorian</option><option value="mixo">Mixolydian</option><option value="lydian">Lydian</option><option value="phrygian">Phrygian</option><option value="hminor">Harmonic minor</option>
-    </select></label>
-    <label class="ctl" style="min-width:auto"><span>Octave</span><div class="row" style="gap:4px"><button id="octDn">−</button><b id="octV" style="min-width:16px;text-align:center">3</b><button id="octUp">+</button></div></label>
-    <label class="ctl" style="min-width:auto"><span>Voicing</span><button id="voicingBtn">Root</button></label>
-  </div>
-  <div class="chordpad" id="chordpad"></div>
-  <div class="ribbon" id="ribbon" title="Drag across to strum the current chord"></div>
-  <div class="row mods" style="margin-top:10px">
-    <button data-mod="7">7th</button>
-    <button data-mod="9">add9</button>
-    <button data-mod="sus">sus</button>
-    <button data-mod="swap">maj/min</button>
-    <button data-mod="dim">dim</button>
-    <button data-mod="bass">+bass</button>
-    <span class="grow"></span>
-    <button id="latch">Hold</button>
-    <button id="arpOn">Arp</button>
-    <select id="arpMode"><option value="up">Up</option><option value="down">Down</option><option value="updown">Up/Down</option><option value="random">Random</option><option value="strum">Strum</option></select>
-    <select id="arpRate"><option value="4">1/4</option><option value="8" selected>1/8</option><option value="12">1/8T</option><option value="16">1/16</option><option value="32">1/32</option></select>
-    <select id="arpOcts"><option value="1">1 oct</option><option value="2" selected>2 oct</option><option value="3">3 oct</option></select>
-  </div>
-</div>
-
-<div class="two">
-  <div class="panel">
-    <h2>Sound</h2>
-    <div class="row sounds" id="sounds" style="margin-bottom:12px"></div>
-    <div class="knobs">
-      <label class="ctl"><span>Tone <b id="toneV">60%</b></span><input type="range" id="tone" min="0" max="100" value="60"></label>
-      <label class="ctl"><span>Space <b id="spaceV">35%</b></span><input type="range" id="space" min="0" max="100" value="35"></label>
-      <label class="ctl"><span>Length <b id="lenV">40%</b></span><input type="range" id="len" min="0" max="100" value="40"></label>
-      <label class="ctl"><span>Volume <b id="svolV">70%</b></span><input type="range" id="svol" min="0" max="100" value="70"></label>
+<div class="device">
+  <span class="screw"></span><span class="screw"></span><span class="screw"></span><span class="screw"></span>
+  <div class="top">
+    <div class="brand">HICHORD<small>digital · beat maker</small></div>
+    <div class="lcd">
+      <div class="big" id="lcdChord">—</div>
+      <div class="big r" id="lcdKey">C MAJ</div>
+      <div class="sm" id="lcdSound">PAD · 808 KIT</div>
+      <div class="sm r" id="lcdLoop">LOOP EMPTY</div>
     </div>
-    <h2 style="margin-top:16px">Chord sequencer <span class="hint" style="text-transform:none;letter-spacing:0">(click a step, then a chord; right-click clears)</span></h2>
-    <div class="seq16" id="cseq"></div>
-    <div class="row" style="margin-top:8px">
-      <button id="cseqOn">Chord seq on</button>
-      <button id="cseqRec">Live record</button>
-      <button id="cseqClear">Clear</button>
-      <span class="hint">1 step = 1 beat · 4 bars</span>
+    <div class="topright">
+      <div class="knob">VOL<input type="range" id="master" min="0" max="100" value="80"><b id="masterV" style="display:none"></b></div>
+      <div class="meter"><i id="meter"></i></div>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="section">
+      <div class="label">Chords <span class="grow"></span>
+        <button class="pill" id="octDn" style="height:24px;padding:0 10px">−</button><b id="octV">3</b><button class="pill" id="octUp" style="height:24px;padding:0 10px">+</button>
+        <button class="pill" id="voicingBtn" style="height:24px;padding:0 10px;font-size:10px">Root</button>
+      </div>
+      <div class="chordpad" id="chordpad"></div>
+      <div class="ribbon" id="ribbon"></div>
+      <div class="mods">
+        <button class="pill" data-mod="7">7th</button>
+        <button class="pill" data-mod="9">add9</button>
+        <button class="pill" data-mod="sus">sus</button>
+        <button class="pill" data-mod="swap">maj/min</button>
+        <button class="pill" data-mod="dim">dim</button>
+        <button class="pill" data-mod="bass">+bass</button>
+        <span class="grow"></span>
+        <button class="pill" id="latch">Hold</button>
+        <button class="pill" id="arpOn">Arp</button>
+        <select id="arpMode"><option value="up">Up</option><option value="down">Down</option><option value="updown">Up/Down</option><option value="random">Random</option><option value="strum">Strum</option></select>
+        <select id="arpRate"><option value="4">1/4</option><option value="8" selected>1/8</option><option value="12">1/8T</option><option value="16">1/16</option><option value="32">1/32</option></select>
+        <select id="arpOcts"><option value="1">1 oct</option><option value="2" selected>2 oct</option><option value="3">3 oct</option></select>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="label">Pads <span class="grow"></span>
+        <div class="seg" id="instruments"><button data-inst="drums" class="on">Drums</button><button data-inst="perc">Perc</button><button data-inst="bass">Bass</button><button data-inst="melody">Melody</button></div>
+      </div>
+      <div class="tappads" id="tappads"></div>
+      <div class="sliders">
+        <label class="sl">Tone<input type="range" id="tone" min="0" max="100" value="60"><b id="toneV">60%</b></label>
+        <label class="sl">Space<input type="range" id="space" min="0" max="100" value="35"><b id="spaceV">35%</b></label>
+        <label class="sl">Length<input type="range" id="len" min="0" max="100" value="40"><b id="lenV">40%</b></label>
+        <label class="sl">Synth<input type="range" id="svol" min="0" max="100" value="70"><b id="svolV">70%</b></label>
+      </div>
+      <div class="mods" style="margin-top:10px">
+        <button class="pill" id="tapRec">● Tap → grid</button>
+        <span class="grow"></span>
+        <select id="kit"><option value="808">808 kit</option><option value="909">909 kit</option><option value="acoustic">Acoustic</option><option value="lofi">Lo-fi</option></select>
+      </div>
+    </div>
+  </div>
+
+  <div class="bottom">
+    <div class="transport">
+      <button class="round" id="play" title="Play / stop">▶</button>
+      <div class="bpm"><input type="number" id="bpm" min="40" max="240" value="96">BPM</div>
+      <button class="round rec" id="rec" title="Record to WAV">●</button>
+    </div>
+    <div class="pedalbox">
+      <div class="pedals">
+        <button class="pedal rec" id="loopRec">● Record loop</button>
+        <button class="pedal" id="loopOn">Loop on</button>
+        <button class="pedal" id="loopUndo">↶ Undo</button>
+        <button class="pedal" id="loopClear">✕ Clear</button>
+      </div>
+      <div class="loopbar"><i id="loopBar"></i></div>
+      <div class="row"><span class="hint" id="loopInfo">empty</span><span class="grow"></span><span class="hint">Loop</span><select id="loopBars" style="padding:2px 6px;font-size:11px"><option value="1">1 bar</option><option value="2" selected>2 bars</option><option value="4">4 bars</option><option value="8">8 bars</option></select></div>
+    </div>
+    <div class="side">
+      <button class="pill" id="studioBtn">Studio ▾</button>
+      <button class="pill" id="save">Save</button>
+      <button class="pill" id="load">Load</button>
+    </div>
+  </div>
+</div>
+
+<div id="studio">
+  <div class="panel">
+    <div class="row">
+      <label class="ctl">Key<select id="key"></select></label>
+      <label class="ctl">Scale<select id="scale">
+        <option value="major">Major</option><option value="minor">Minor</option><option value="dorian">Dorian</option><option value="mixo">Mixolydian</option><option value="lydian">Lydian</option><option value="phrygian">Phrygian</option><option value="hminor">Harmonic minor</option>
+      </select></label>
+      <label class="ctl">Swing <b id="swingV">0%</b><input type="range" id="swing" min="0" max="70" value="0"></label>
+      <span class="grow"></span>
+      <label class="ctl">Sound<div class="row" id="sounds" style="gap:6px"></div></label>
     </div>
   </div>
   <div class="panel">
     <div class="row" style="margin-bottom:10px">
-      <h2 style="margin:0" class="grow">Tap pads</h2>
-      <div class="row" id="instruments" style="gap:4px">
-        <button data-inst="drums" class="on">Drums</button><button data-inst="perc">Percussion</button><button data-inst="bass">Bass</button><button data-inst="melody">Melody</button>
-      </div>
-    </div>
-    <div class="tappads" id="tappads"></div>
-    <div class="row" style="margin-top:10px">
-      <button id="tapRec">● Record taps to grid</button>
-      <span class="hint">Keys Q W E R / A S D F / Z X C V. With record on, drum taps are quantized into the grid (starts playback).</span>
-    </div>
-  </div>
-</div>
-
-<div class="panel looper">
-  <div class="row">
-    <h2 style="margin:0">Loop pedals</h2>
-    <span class="hint" id="loopInfo">empty</span>
-    <span class="grow"></span>
-    <label class="ctl" style="min-width:auto"><span>Length</span><select id="loopBars"><option value="1">1 bar</option><option value="2" selected>2 bars</option><option value="4">4 bars</option><option value="8">8 bars</option></select></label>
-  </div>
-  <div class="pedals">
-    <button class="pedal rec" id="loopRec">● Record loop</button>
-    <button class="pedal" id="loopOn">Loop on</button>
-    <button class="pedal" id="loopUndo">↶ Undo layer</button>
-    <button class="pedal" id="loopClear">✕ Clear</button>
-  </div>
-  <div class="loopbar"><i id="loopBar"></i></div>
-  <p class="hint">Hit Record, then play chords, strum, tap pads or melody — it loops and you can overdub layers. Keys: <b>L</b> = record/overdub, <b>Backspace</b> = undo layer.</p>
-</div>
-
-<div class="panel">
-  <div class="row" style="margin-bottom:10px">
-    <h2 style="margin:0" class="grow">Drum machine</h2>
-    <label class="ctl" style="min-width:auto"><span>Kit</span><select id="kit"><option value="808">808</option><option value="909">909</option><option value="acoustic">Acoustic</option><option value="lofi">Lo-fi</option></select></label>
-    <div class="presets row">
+      <span class="ctl">Drum machine</span>
+      <span class="grow"></span>
       <span class="hint">Presets:</span>
       <button data-preset="house">House</button><button data-preset="hiphop">Hip-hop</button><button data-preset="trap">Trap</button><button data-preset="dnb">D&amp;B</button><button data-preset="afro">Afrobeat</button><button data-preset="rock">Rock</button><button data-preset="lofi">Lo-fi</button>
       <button id="randomize">Random</button><button id="clearDrums">Clear</button>
     </div>
+    <div class="grid-wrap"><div class="drumgrid" id="drumgrid"></div></div>
+    <p class="hint">Click = on · again = soft · again = off · click a name to audition · right-click a step fills every 4th step.</p>
   </div>
-  <div class="grid-wrap"><div class="drumgrid" id="drumgrid"></div></div>
-  <p class="hint">Click = on, click again = soft accent, third click = off. Click a drum name to audition it. Right-click a step to fill every 4th step in that row.</p>
+  <div class="panel">
+    <div class="row" style="margin-bottom:10px"><span class="ctl">Chord sequencer</span><span class="hint">click a step, then a chord key · right-click clears · 1 step = 1 beat</span><span class="grow"></span>
+      <button id="cseqOn">Seq on</button><button id="cseqRec">Live record</button><button id="cseqClear">Clear</button></div>
+    <div class="seq16" id="cseq"></div>
+  </div>
 </div>
-
-<footer>Made with Web Audio. Runs entirely in your browser — nothing is uploaded. Free forever.</footer>
 
 <script>
 (() => {
@@ -557,9 +612,17 @@ function loopToggleRec(){ ensureCtx(); if(L.recording){ L.recording=false; if(!L
 function loopUndo(){ if(L.recording){ L.recording=false; } const layer=L.layers.pop(); if(layer){ L.events=L.events.filter(e=>!layer.includes(e)); } stopLoopVoices(); drawLooper(); }
 function loopClear(){ L.events=[]; L.layers=[]; L.recording=false; stopLoopVoices(); drawLooper(); }
 function stopLoopVoices(){ [...voices.keys()].filter(k=>k.startsWith('l')).forEach(k=>noteOff(k)); }
+const SCALE_SHORT={major:'MAJ',minor:'MIN',dorian:'DOR',mixo:'MIX',lydian:'LYD',phrygian:'PHR',hminor:'HMIN'};
+function drawLcd(){
+  const cur=heldChord?chordFor(heldChord.d).label:(activeDegrees.size?chordFor([...activeDegrees][0]).label:'—');
+  $('lcdChord').textContent=cur;
+  $('lcdKey').textContent=NOTE_NAMES[S.key]+' '+SCALE_SHORT[S.scale]+' · '+S.bpm;
+  $('lcdSound').textContent=(SOUNDS[S.sound].label+' · '+S.kit+' kit'+(S.arp?' · ARP':'')+(S.latch?' · HOLD':'')).toUpperCase();
+}
 function drawLooper(){
-  $('loopRec').classList.toggle('on',L.recording); $('loopRec').textContent=L.recording?'■ Stop rec':(L.events.length?'● Overdub':'● Record loop');
-  $('loopOn').classList.toggle('on2',L.on); $('loopOn').textContent=L.on?'Loop on':'Loop muted';
+  $('lcdLoop').textContent=(L.recording?'● REC ':'')+(L.events.length?`LOOP ${L.layers.length}L ${S.loopBars}BAR`:'LOOP EMPTY');
+  $('loopRec').classList.toggle('on',L.recording); $('loopRec').textContent=L.recording?'■ Stop':(L.events.length?'● Overdub':'● Record loop');
+  $('loopOn').classList.toggle('on2',L.on); $('loopOn').textContent=L.on?'Loop on':'Muted';
   $('loopInfo').textContent=L.events.length? `${L.layers.length} layer${L.layers.length>1?'s':''} · ${L.events.length} events`:'empty';
 }
 function drawLoopPos(gstep){ const el=$('loopBar'); const p=(gstep%loopLen())/loopLen()*100; el.style.width=p+'%'; }
@@ -646,10 +709,10 @@ function play(){
   if(S.playing) return;
   S.playing=true; S.step=0; bar=0; cseqPos=0; nextStepTime=ctx.currentTime+0.05;
   if(S.arp&&curArpChord){arpRunning=true;arpNextTime=nextStepTime;arpIdx=0;}
-  timer=setInterval(schedule,TICK); $('play').textContent='■ Stop'; $('play').classList.add('on');
+  timer=setInterval(schedule,TICK); $('play').textContent='■'; $('play').classList.add('on');
 }
 function stop(){
-  S.playing=false; clearInterval(timer); timer=null; $('play').textContent='▶ Play'; $('play').classList.remove('on');
+  S.playing=false; clearInterval(timer); timer=null; $('play').textContent='▶'; $('play').classList.remove('on');
   if(seqChordId){noteOff(seqChordId);seqChordId=null;}
   stopLoopVoices(); if(L.recording) loopToggleRec();
   drawStep(-1,-1);
@@ -688,6 +751,7 @@ function chordUp(d){
 function flashChord(d,label){ const el=pads[d]; el.classList.add('on'); el.querySelector('small').textContent=label; setTimeout(()=>{ if(!activeDegrees.has(d)&&!(heldChord&&heldChord.d===d)) el.classList.remove('on'); },200); }
 const pads=[];
 function drawPad(){
+  drawLcd();
   pads.forEach((el,d)=>{ const ch=chordFor(d); el.querySelector('small').textContent=ch.label; el.classList.toggle('on', activeDegrees.has(d) || (heldChord&&heldChord.d===d&&(S.latch||S.arp))); });
 }
 function buildPad(){
@@ -759,7 +823,7 @@ function loadPreset(name){
   const p=P[name]; const keys=['kick','snare','clap','ch','oh','tom','rim','cowbell','shaker','conga','crash','snap'];
   keys.forEach((k,i)=>{ const s=p[k]||''; for(let j=0;j<16;j++) S.drums[i][j]= s[j]==='1'?1:0; });
   if(name==='trap'){ for(let j=0;j<16;j++) if(S.drums[3][j]&&j%2) S.drums[3][j]=2; }
-  if(name==='lofi'){ for(let j=0;j<16;j++) if(S.drums[3][j]&&j%4===2) S.drums[3][j]=2; S.kit='lofi'; $('kit').value='lofi'; setCrackle(true); drawTapPads(); }
+  if(name==='lofi'){ for(let j=0;j<16;j++) if(S.drums[3][j]&&j%4===2) S.drums[3][j]=2; S.kit='lofi'; $('kit').value='lofi'; setCrackle(true); drawTapPads(); drawLcd(); }
   drawDrums();
 }
 function randomizeDrums(){
@@ -778,12 +842,12 @@ function toggleRec(){
   recorder.ondataavailable=e=>{ if(e.data.size) chunks.push(e.data); };
   recorder.onstop=async()=>{
     const blob=new Blob(chunks,{type:recorder.mimeType}); recorder=null;
-    $('rec').classList.remove('on'); $('rec').textContent='● Record';
+    $('rec').classList.remove('on');
     const name='beat-'+new Date().toISOString().replace(/[:.]/g,'-');
     try{ const buf=await ctx.decodeAudioData(await blob.arrayBuffer()); download(encodeWav(buf), name+'.wav'); }
     catch(e){ download(blob, name+(blob.type.includes('mp4')?'.m4a':'.webm')); }
   };
-  recorder.start(); $('rec').classList.add('on'); $('rec').textContent='■ Stop rec';
+  recorder.start(); $('rec').classList.add('on');
 }
 function download(blob,name){ const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=name; a.click(); setTimeout(()=>URL.revokeObjectURL(url),5000); }
 function encodeWav(buf){
@@ -824,14 +888,14 @@ function wire(){
   $('octDn').addEventListener('click',()=>{S.oct=clamp(S.oct-1,1,5);$('octV').textContent=S.oct;drawPad();drawTapPads();});
   $('octUp').addEventListener('click',()=>{S.oct=clamp(S.oct+1,1,5);$('octV').textContent=S.oct;drawPad();drawTapPads();});
   $('voicingBtn').addEventListener('click',()=>{const ks=Object.keys(VOICINGS);S.voicing=ks[(ks.indexOf(S.voicing)+1)%ks.length];$('voicingBtn').textContent=VOICINGS[S.voicing];drawPad();});
-  $('kit').addEventListener('change',e=>{ensureCtx();S.kit=e.target.value;setCrackle(S.kit==='lofi');drawTapPads();});
+  $('kit').addEventListener('change',e=>{ensureCtx();S.kit=e.target.value;setCrackle(S.kit==='lofi');drawTapPads();drawLcd();});
   $('loopRec').addEventListener('click',loopToggleRec); $('loopUndo').addEventListener('click',loopUndo); $('loopClear').addEventListener('click',loopClear);
   $('loopOn').addEventListener('click',()=>{L.on=!L.on; if(!L.on) stopLoopVoices(); drawLooper();});
   $('loopBars').addEventListener('change',e=>{S.loopBars=+e.target.value; drawLooper();});
-  Object.entries(SOUNDS).forEach(([k,p])=>{const b=document.createElement('button');b.dataset.sound=k;b.textContent=p.label;b.addEventListener('click',()=>{ensureCtx();S.sound=k;applySound();drawTapPads();});$('sounds').appendChild(b);});
+  Object.entries(SOUNDS).forEach(([k,p])=>{const b=document.createElement('button');b.dataset.sound=k;b.textContent=p.label;b.addEventListener('click',()=>{ensureCtx();S.sound=k;applySound();drawTapPads();drawLcd();});$('sounds').appendChild(b);});
   document.querySelectorAll('[data-inst]').forEach(b=>b.addEventListener('click',()=>{S.inst=b.dataset.inst;document.querySelectorAll('[data-inst]').forEach(x=>x.classList.toggle('on',x===b));drawTapPads();}));
   $('tapRec').addEventListener('click',()=>{S.tapRec=!S.tapRec;$('tapRec').classList.toggle('on',S.tapRec);});
-  $('bpm').addEventListener('change',e=>{S.bpm=clamp(+e.target.value||96,40,240);e.target.value=S.bpm;if(ctx)updateDelayTime();});
+  $('bpm').addEventListener('change',e=>{S.bpm=clamp(+e.target.value||96,40,240);e.target.value=S.bpm;if(ctx)updateDelayTime();drawLcd();});
   uiHandlers.push(bindRange('swing',v=>S.swing=v,v=>v+'%'));
   uiHandlers.push(bindRange('master',v=>{if(master)master.gain.setTargetAtTime(v/100,ctx.currentTime,.02)},v=>v+'%'));
   uiHandlers.push(bindRange('tone',v=>{S.tone=v/100;applySound();},v=>v+'%'));
@@ -840,8 +904,8 @@ function wire(){
   uiHandlers.push(bindRange('svol',v=>{if(synthBus)synthBus.gain.setTargetAtTime(v/100,ctx.currentTime,.02)},v=>v+'%'));
   // mods
   document.querySelectorAll('[data-mod]').forEach(b=>b.addEventListener('click',()=>{ const m=b.dataset.mod; S.mods[m]=!S.mods[m]; if(m==='dim'&&S.mods.dim){S.mods.sus=false;} if(m==='sus'&&S.mods.sus){S.mods.dim=false;} syncMods(); }));
-  $('latch').addEventListener('click',()=>{S.latch=!S.latch; $('latch').classList.toggle('on',S.latch); if(!S.latch && heldChord && !activeDegrees.has(heldChord.d)){ noteOff(heldChord.id); heldChord=null; curArpChord=null; arpRunning=false; drawPad(); }});
-  $('arpOn').addEventListener('click',()=>{ ensureCtx(); S.arp=!S.arp; $('arpOn').classList.toggle('on2',S.arp);
+  $('latch').addEventListener('click',()=>{S.latch=!S.latch; drawLcd(); $('latch').classList.toggle('on',S.latch); if(!S.latch && heldChord && !activeDegrees.has(heldChord.d)){ noteOff(heldChord.id); heldChord=null; curArpChord=null; arpRunning=false; drawPad(); }});
+  $('arpOn').addEventListener('click',()=>{ ensureCtx(); S.arp=!S.arp; drawLcd(); $('arpOn').classList.toggle('on2',S.arp);
     if(S.arp){ if(heldChord){ noteOff(heldChord.id); curArpChord={notes:heldChord.notes}; startArpIfNeeded(ctx.currentTime);} if(seqChordId){noteOff(seqChordId);seqChordId=null;} }
     else { arpRunning=false; if(heldChord&&(S.latch||activeDegrees.has(heldChord.d))) noteOn(heldChord.id,heldChord.notes); curArpChord=null; }
   });
@@ -856,6 +920,7 @@ function wire(){
   $('clearDrums').addEventListener('click',()=>{S.drums.forEach(r=>r.fill(0));drawDrums();});
   $('play').addEventListener('click',()=>{ensureCtx(); S.playing?stop():play();});
   $('rec').addEventListener('click',toggleRec);
+  $('studioBtn').addEventListener('click',()=>{const o=$('studio').classList.toggle('open');$('studioBtn').textContent=o?'Studio ▴':'Studio ▾';$('studioBtn').classList.toggle('on',o); if(o) $('studio').scrollIntoView({behavior:'smooth'});});
   $('save').addEventListener('click',saveState); $('load').addEventListener('click',()=>{ensureCtx();loadState();});
   // keyboard
   const drumKeys={q:0,w:1,e:2,r:3,a:4,s:5,d:6,f:7,z:8,x:9,c:10,v:11};
@@ -877,7 +942,7 @@ function wire(){
   });
   window.addEventListener('keyup',e=>{ const d=parseInt(e.key)-1; if(d>=0&&d<7) chordUp(d); });
   window.addEventListener('blur',()=>{ activeDegrees.forEach(d=>chordUp(d)); });
-  $('startBtn').addEventListener('click',()=>{ ensureCtx(); $('start').remove(); loadPreset('hiphop'); });
+  $('startBtn').addEventListener('click',()=>{ ensureCtx(); $('start').remove(); loadPreset('hiphop'); drawLcd(); });
   // meter
   const meter=$('meter');
   (function loop(){ requestAnimationFrame(loop); if(!analyser) return; analyser.getByteTimeDomainData(meterData); let p=0; for(let i=0;i<meterData.length;i++){const v=Math.abs(meterData[i]-128)/128; if(v>p)p=v;} meter.style.width=Math.min(100,p*130)+'%'; })();
