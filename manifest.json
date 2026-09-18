@@ -1,0 +1,14 @@
+{
+  "name": "HiChord — Beat Maker",
+  "short_name": "HiChord",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "landscape",
+  "background_color": "#0b0b0e",
+  "theme_color": "#1c1d21",
+  "icons": [
+    {"src": "icon-192.png", "sizes": "192x192", "type": "image/png"},
+    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png"}
+  ]
+}

@@ -13,3 +13,19 @@ Everything is in `index.html` — no build step, no dependencies. Open it locall
 - `Space` starts/stops the sequencer.
 - Loop pedals: `L` records/overdubs a 1–8 bar loop of anything you play (chords, strum, pads, melody); `Backspace` undoes the last layer.
 - Record button captures the master output and downloads a 16-bit `.wav`.
+
+## Use it on an iPad / phone with no Wi-Fi
+
+1. Open the Netlify URL once in Safari (or Chrome on Android).
+2. Tap **Share → Add to Home Screen**.
+3. Launch it from the home screen icon. It is now installed and runs fully offline
+   (service worker caches the whole app; there are no external dependencies).
+
+Songs are saved inside the browser (Songs panel under **Studio**), auto-restore on relaunch,
+and can be exported/imported as `.hichord.json` files to back up or move between devices.
+
+## Hardware-style controls
+
+- Gray **KEY**, yellow **SOUND**, red **KIT** buttons cycle key / sound (18) / drum kit (16). Shift-click goes backwards.
+- ▲ / ▼ (or arrow keys ↑ ↓) change octave, even while a chord is held.
+- Pads: Drums · Perc · Bass · Keys · Lead · FX. **Auto bass** plays your chord's root on every kick.
